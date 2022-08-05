@@ -2,6 +2,8 @@ Java Spring Boot application that uses the Spotify API to remove explicit tracks
 
 TODOs:
 
+Write tests.
+
 Properly implement Spring Security.
 
 Improve error handling.
