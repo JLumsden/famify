@@ -60,7 +60,7 @@ public class PlaylistService {
         return response;
     }
 
-    public DeleteQueryDto parsePlaylistItems(String playlistItems) {
+    public DeleteQueryDto parsePlaylistItemsJsonToDeleteQueryDto(String playlistItems) {
         ObjectMapper mapper = new ObjectMapper();
         DeleteQueryDto deleteQueryDto = new DeleteQueryDto();
         List<TrackDto> explicitList = new ArrayList<>();
@@ -97,8 +97,7 @@ public class PlaylistService {
         return deleteQueryDto;
     }
 
-    public ResponseEntity deleteExplicitItems(DeleteQueryDto deleteQueryDto, String playlistId, String accessToken) {
-        String url = "https://api.spotify.com/v1/playlists/" + playlistId + "/tracks";
+    public HttpEntity deleteQueryDtoToJsonEntity(DeleteQueryDto deleteQueryDto, String accessToken) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(accessToken);
@@ -112,9 +111,14 @@ public class PlaylistService {
         }
         HttpEntity<String> entity = new HttpEntity<String>(jsonString, headers);
 
+        return entity;
+    }
+
+    public ResponseEntity deleteExplicitItems(HttpEntity entity, String playlistId) {
+        String url = "https://api.spotify.com/v1/playlists/" + playlistId + "/tracks";
+
         ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.DELETE, entity, String.class);
 
         return response;
     }
-
 }

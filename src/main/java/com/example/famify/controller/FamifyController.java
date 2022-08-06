@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.json.JsonParseException;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -52,10 +53,10 @@ public class FamifyController {
             catch (IOException e) {
                 e.printStackTrace();
             }
+            return "redirect";
         } else {
             return "error";
         }
-        return "redirect";
     }
 
     @RequestMapping(value = "/playlist", method = RequestMethod.POST)
@@ -71,7 +72,10 @@ public class FamifyController {
             return "error";
         }
 
-        ResponseEntity<String> deleteResponse = playlistService.deleteExplicitItems(playlistService.parsePlaylistItems(getResponse.getBody()), playlistId, authData.getAccess_token());
+        HttpEntity<String> entity = playlistService.deleteQueryDtoToJsonEntity(
+                playlistService.parsePlaylistItemsJsonToDeleteQueryDto(getResponse.getBody()), authData.getAccess_token());
+
+        ResponseEntity<String> deleteResponse = playlistService.deleteExplicitItems(entity, playlistId);
 
         if (deleteResponse.getStatusCodeValue() == 200) {
             return "success";
