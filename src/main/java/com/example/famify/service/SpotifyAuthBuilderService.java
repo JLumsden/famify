@@ -1,6 +1,5 @@
 package com.example.famify.service;
 
-import com.example.famify.data.AccessTokenDto;
 import com.example.famify.data.AuthData;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
@@ -20,15 +19,18 @@ import java.util.Base64;
 public class SpotifyAuthBuilderService {
 
     private final String clientId = "81dcd42498b9426fa624efead026626a";
-    private final String redirectUri = "http://localhost:8080/redirect";
-    //public AuthData authData = new AuthData();
+    private final String redirectUrl = "http://localhost:8080/redirect";
+
+
     private final RestTemplate restTemplate = new RestTemplate();
 
     public String getAuthUrl(AuthData authData) {
+        final String authScopes = "playlist-read-collaborative,playlist-modify-public,playlist-read-private,playlist-modify-private";
+
         return "https://accounts.spotify.com/en/authorize?client_id=" + this.clientId
-                + "&response_type=code&redirect_uri=" + this.redirectUri
+                + "&response_type=code&redirect_uri=" + this.redirectUrl
                 + "&code_challenge_method=S256&code_challenge=" + authData.getCode_challenge()
-                + "&scope=playlist-read-collaborative,playlist-modify-public,playlist-read-private,playlist-modify-private"
+                + "&scope=" + authScopes
                 + "&show_dialog=true";
     }
 
@@ -40,7 +42,7 @@ public class SpotifyAuthBuilderService {
         map.add("client_id", this.clientId);
         map.add("grant_type", "authorization_code");
         map.add("code", code);
-        map.add("redirect_uri", this.redirectUri);
+        map.add("redirect_uri", this.redirectUrl);
         map.add("code_verifier", authData.getCode_verifier());
 
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(map, headers);
