@@ -9,7 +9,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.json.JsonParseException;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -59,29 +58,13 @@ public class FamifyController {
         }
     }
 
+    /*
+    postPlaylistUrl
+    Calls delegator to parse for playlistId, get explicit playlist items and delete said items
+     */
     @RequestMapping(value = "/playlist", method = RequestMethod.POST)
     public String postPlaylistUrl(@ModelAttribute("authData") AuthData authData, String playlistUrl) {
-        String playlistId = playlistService.parseForPlaylistId(playlistUrl);
-        if (playlistId.equals("bad link")) {
-            return "error";
-        }
-
-        ResponseEntity<String> getResponse = playlistService.getPlaylistItems(playlistId, authData.getAccess_token());
-
-        if (getResponse.getStatusCodeValue() != 200) {
-            return "error";
-        }
-
-        HttpEntity<String> entity = playlistService.deleteQueryDtoToJsonEntity(
-                playlistService.parsePlaylistItemsJsonToDeleteQueryDto(getResponse.getBody()), authData.getAccess_token());
-
-        ResponseEntity<String> deleteResponse = playlistService.deleteExplicitItems(entity, playlistId);
-
-        if (deleteResponse.getStatusCodeValue() == 200) {
-            return "success";
-        } else {
-            return "error";
-        }
+        return playlistService.postPlaylistUrlDelegator(authData.getAccess_token(), playlistUrl);
     }
 
     @RequestMapping(value = "/error", method = RequestMethod.GET)

@@ -23,6 +23,28 @@ import java.util.List;
 public class PlaylistService {
     private SpotifyApiRepository spotifyApiRepository;
 
+    public String postPlaylistUrlDelegator(String accessToken, String playlistUrl) {
+        String playlistId = parseForPlaylistId(playlistUrl);
+        if (playlistId.equals("error")) {
+            return playlistId;
+        }
+
+        ResponseEntity<String> response = getPlaylistItems(playlistId, accessToken);
+        if (response.getStatusCodeValue() != 200) {
+            return "error";
+        }
+
+        HttpEntity<String> entity = deleteQueryDtoToJsonEntity(
+                parsePlaylistItemsJsonToDeleteQueryDto(response.getBody()), accessToken);
+
+        response = deleteExplicitItems(entity, playlistId);
+        if (response.getStatusCodeValue() == 200) {
+            return "success";
+        } else {
+            return "error";
+        }
+    }
+
     public String parseForPlaylistId(String playlistUrl) {
         String[] tokens = playlistUrl.split("/");
         int i;
@@ -43,7 +65,7 @@ public class PlaylistService {
                 }
             }
         }
-        return "bad link";
+        return "error";
     }
 
     public ResponseEntity<String> getPlaylistItems(String playlistId, String accessToken) {
@@ -56,9 +78,7 @@ public class PlaylistService {
 
         HttpEntity<Void> entity = new HttpEntity<>(headers);
 
-        ResponseEntity<String> response = spotifyApiRepository.get(url, entity, String.class);
-
-        return response;
+        return spotifyApiRepository.get(url, entity, String.class);
     }
 
     public DeleteQueryDto parsePlaylistItemsJsonToDeleteQueryDto(String playlistItems) {
@@ -110,16 +130,12 @@ public class PlaylistService {
         } catch (JsonProcessingException e) {
             e.printStackTrace();
         }
-        HttpEntity<String> entity = new HttpEntity<String>(jsonString, headers);
-
-        return entity;
+        return new HttpEntity<String>(jsonString, headers);
     }
 
-    public ResponseEntity deleteExplicitItems(HttpEntity entity, String playlistId) {
+    public ResponseEntity<String> deleteExplicitItems(HttpEntity entity, String playlistId) {
         String url = "https://api.spotify.com/v1/playlists/" + playlistId + "/tracks";
 
-        ResponseEntity<String> response = spotifyApiRepository.delete(url, entity, String.class);
-
-        return response;
+        return spotifyApiRepository.delete(url, entity, String.class);
     }
 }
