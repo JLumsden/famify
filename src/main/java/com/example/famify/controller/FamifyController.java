@@ -18,10 +18,11 @@ public class FamifyController {
     private SpotifyAuthBuilderService spotifyAuthBuilderService;
     private PlaylistService playlistService;
 
+    //Auth Redirect
     @RequestMapping(value = "/auth", method = RequestMethod.GET)
-    public ModelAndView authRedirect(@ModelAttribute("authData") AuthData authData) {
-        spotifyAuthBuilderService.createCodeVerifier(authData);
-        spotifyAuthBuilderService.createCodeChallenge(authData);
+    public ModelAndView performAuthentication(@ModelAttribute("authData") AuthData authData) {
+        spotifyAuthBuilderService.performAuthenticationDelegator(authData);
+
         return new ModelAndView("redirect:" + spotifyAuthBuilderService.getAuthUrl(authData));
     }
 

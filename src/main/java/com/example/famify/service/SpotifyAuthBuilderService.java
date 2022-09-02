@@ -28,6 +28,11 @@ public class SpotifyAuthBuilderService {
     private final SpotifyAuthConfig spotifyAuthConfig;
     private final SpotifyApiRepository spotifyApiRepository;
 
+    public void performAuthenticationDelegator(AuthData authData) {
+        createCodeVerifier(authData);
+        createCodeChallenge(authData);
+    }
+
     public String getAccessTokenDelegator(AuthData authData, String authCode) {
         ResponseEntity<String> response = getAccessToken(authData, authCode);
         if(response.getStatusCodeValue() != 200) {
