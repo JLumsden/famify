@@ -5,7 +5,6 @@ import com.example.famify.service.PlaylistService;
 import com.example.famify.service.SpotifyAuthBuilderService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
@@ -27,15 +26,8 @@ public class FamifyController {
     }
 
     @RequestMapping(value = "/redirect", method = RequestMethod.GET)
-    public String getRedirect(@ModelAttribute("authData") AuthData authData, @RequestParam(value = "code") final String authCode) {
-        ResponseEntity<String> response = spotifyAuthBuilderService.getAccessToken(authData, authCode);
-
-        int status = response.getStatusCodeValue();
-        if (status == 200) {
-            return spotifyAuthBuilderService.parseJsonForAccessToken(response.getBody(), authData);
-        } else {
-            return "error";
-        }
+    public String getAccessToken(@ModelAttribute("authData") AuthData authData, @RequestParam(value = "code") final String authCode) {
+        return spotifyAuthBuilderService.getAccessTokenDelegator(authData, authCode);
     }
 
     /*

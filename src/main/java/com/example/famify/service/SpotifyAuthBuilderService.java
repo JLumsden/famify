@@ -28,6 +28,15 @@ public class SpotifyAuthBuilderService {
     private final SpotifyAuthConfig spotifyAuthConfig;
     private final SpotifyApiRepository spotifyApiRepository;
 
+    public String getAccessTokenDelegator(AuthData authData, String authCode) {
+        ResponseEntity<String> response = getAccessToken(authData, authCode);
+        if(response.getStatusCodeValue() != 200) {
+            return "error";
+        }
+
+        return parseJsonForAccessToken(response.getBody(), authData);
+    }
+
     public String getAuthUrl(AuthData authData) {
         return "https://accounts.spotify.com/en/authorize?client_id=" + spotifyAuthConfig.getClientId()
                 + "&response_type=code&redirect_uri=" + spotifyAuthConfig.getRedirectUrl()
