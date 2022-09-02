@@ -3,18 +3,12 @@ package com.example.famify.controller;
 import com.example.famify.data.AuthData;
 import com.example.famify.service.PlaylistService;
 import com.example.famify.service.SpotifyAuthBuilderService;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.json.JsonParseException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
-
-import java.io.IOException;
 
 @SessionAttributes("authData")
 @Controller
@@ -38,21 +32,7 @@ public class FamifyController {
 
         int status = response.getStatusCodeValue();
         if (status == 200) {
-            try {
-                ObjectMapper mapper = new ObjectMapper();
-                JsonNode rootNode = mapper.readTree(response.getBody());
-                authData.setAccess_token(rootNode.path("access_token").asText());
-            }
-            catch (JsonParseException e) {
-                e.printStackTrace();
-            }
-            catch (JsonMappingException e) {
-                e.printStackTrace();
-            }
-            catch (IOException e) {
-                e.printStackTrace();
-            }
-            return "redirect";
+            return spotifyAuthBuilderService.parseJsonForAccessToken(response.getBody(), authData);
         } else {
             return "error";
         }

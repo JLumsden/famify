@@ -3,13 +3,18 @@ package com.example.famify.service;
 import com.example.famify.config.SpotifyAuthConfig;
 import com.example.famify.data.AuthData;
 import com.example.famify.repository.SpotifyApiRepository;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.json.JsonParseException;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -34,9 +39,7 @@ public class SpotifyAuthBuilderService {
     public ResponseEntity<String> getAccessToken(AuthData authData, String code) {
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(createAuthPayload(authData, code), createHeaders());
 
-        ResponseEntity<String> response = spotifyApiRepository.post(spotifyAuthConfig.getAuthUrl(), request, String.class);
-
-        return response;
+        return spotifyApiRepository.post(spotifyAuthConfig.getAuthUrl(), request, String.class);
     }
 
     public void createCodeVerifier(AuthData authData) {
@@ -77,5 +80,20 @@ public class SpotifyAuthBuilderService {
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
         return headers;
+    }
+
+    public String parseJsonForAccessToken(String response, AuthData authData) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode rootNode = mapper.readTree(response);
+            authData.setAccess_token(rootNode.path("access_token").asText());
+        } catch (JsonParseException e) {
+            e.printStackTrace();
+        } catch (JsonMappingException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return "redirect";
     }
 }
