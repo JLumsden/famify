@@ -2,15 +2,16 @@ package com.example.famify.service;
 
 import com.example.famify.data.DeleteQueryDto;
 import com.example.famify.data.TrackDto;
+import com.example.famify.repository.SpotifyApiRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.json.JsonParseException;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -18,9 +19,9 @@ import java.util.List;
 
 @Service
 @Slf4j
+@AllArgsConstructor
 public class PlaylistService {
-
-    RestTemplate restTemplate = new RestTemplate();
+    private SpotifyApiRepository spotifyApiRepository;
 
     public String parseForPlaylistId(String playlistUrl) {
         String[] tokens = playlistUrl.split("/");
@@ -45,7 +46,7 @@ public class PlaylistService {
         return "bad link";
     }
 
-    public ResponseEntity getPlaylistItems(String playlistId, String accessToken) {
+    public ResponseEntity<String> getPlaylistItems(String playlistId, String accessToken) {
         //fields=items(track(id,explicit))
         String url = "https://api.spotify.com/v1/playlists/" + playlistId + "/tracks";
 
@@ -55,7 +56,7 @@ public class PlaylistService {
 
         HttpEntity<Void> entity = new HttpEntity<>(headers);
 
-        ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
+        ResponseEntity<String> response = spotifyApiRepository.get(url, entity, String.class);
 
         return response;
     }
@@ -70,7 +71,7 @@ public class PlaylistService {
             JsonNode trackNode;
 
             String trackUri;
-            Boolean isExplicit;
+            boolean isExplicit;
             for (JsonNode itemNode : itemsNode) {
                 trackNode = itemNode.path("track");
 
@@ -97,7 +98,7 @@ public class PlaylistService {
         return deleteQueryDto;
     }
 
-    public HttpEntity deleteQueryDtoToJsonEntity(DeleteQueryDto deleteQueryDto, String accessToken) {
+    public HttpEntity<String> deleteQueryDtoToJsonEntity(DeleteQueryDto deleteQueryDto, String accessToken) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(accessToken);
@@ -117,7 +118,7 @@ public class PlaylistService {
     public ResponseEntity deleteExplicitItems(HttpEntity entity, String playlistId) {
         String url = "https://api.spotify.com/v1/playlists/" + playlistId + "/tracks";
 
-        ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.DELETE, entity, String.class);
+        ResponseEntity<String> response = spotifyApiRepository.delete(url, entity, String.class);
 
         return response;
     }
