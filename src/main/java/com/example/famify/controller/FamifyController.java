@@ -23,8 +23,8 @@ import java.io.IOException;
 @Slf4j
 public class FamifyController {
 
-    SpotifyAuthBuilderService spotifyAuthBuilderService;
-    PlaylistService playlistService;
+    private SpotifyAuthBuilderService spotifyAuthBuilderService;
+    private PlaylistService playlistService;
 
     @RequestMapping(value = "/auth", method = RequestMethod.GET)
     public ModelAndView authRedirect(@ModelAttribute("authData") AuthData authData) {
