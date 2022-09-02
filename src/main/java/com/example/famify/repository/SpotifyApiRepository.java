@@ -3,8 +3,10 @@ package com.example.famify.repository;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Repository;
 import org.springframework.web.client.RestTemplate;
 
+@Repository
 public class SpotifyApiRepository {
     private final RestTemplate restTemplate = new RestTemplate();
     public <T, R> ResponseEntity<T> get(String url, HttpEntity<R> entity, Class<T> clazz) {
