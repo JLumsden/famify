@@ -1,12 +1,14 @@
 package com.example.famify.service;
 
+import com.example.famify.config.SpotifyAuthConfig;
 import com.example.famify.data.AuthData;
+import com.example.famify.repository.SpotifyApiRepository;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.RestTemplate;
 
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
@@ -16,38 +18,23 @@ import java.util.Base64;
 
 @Slf4j
 @Service
+@AllArgsConstructor
 public class SpotifyAuthBuilderService {
-
-    private final String clientId = "81dcd42498b9426fa624efead026626a";
-    private final String redirectUrl = "http://localhost:8080/redirect";
-
-
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final SpotifyAuthConfig spotifyAuthConfig;
+    private final SpotifyApiRepository spotifyApiRepository;
 
     public String getAuthUrl(AuthData authData) {
-        final String authScopes = "playlist-read-collaborative,playlist-modify-public,playlist-read-private,playlist-modify-private";
-
-        return "https://accounts.spotify.com/en/authorize?client_id=" + this.clientId
-                + "&response_type=code&redirect_uri=" + this.redirectUrl
+        return "https://accounts.spotify.com/en/authorize?client_id=" + spotifyAuthConfig.getClientId()
+                + "&response_type=code&redirect_uri=" + spotifyAuthConfig.getRedirectUrl()
                 + "&code_challenge_method=S256&code_challenge=" + authData.getCode_challenge()
-                + "&scope=" + authScopes
+                + "&scope=" + spotifyAuthConfig.getAuthScopes()
                 + "&show_dialog=true";
     }
 
-    public ResponseEntity getAccessToken(AuthData authData, String code) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+    public ResponseEntity<String> getAccessToken(AuthData authData, String code) {
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(createAuthPayload(authData, code), createHeaders());
 
-        MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
-        map.add("client_id", this.clientId);
-        map.add("grant_type", "authorization_code");
-        map.add("code", code);
-        map.add("redirect_uri", this.redirectUrl);
-        map.add("code_verifier", authData.getCode_verifier());
-
-        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(map, headers);
-
-        ResponseEntity<String> response = restTemplate.exchange("https://accounts.spotify.com/api/token", HttpMethod.POST, request, String.class);
+        ResponseEntity<String> response = spotifyApiRepository.post(spotifyAuthConfig.getAuthUrl(), request, String.class);
 
         return response;
     }
@@ -71,5 +58,24 @@ public class SpotifyAuthBuilderService {
             log.error("Unable to generate code challenge {}", exception);
         }
         authData.setCode_challenge(Base64.getUrlEncoder().withoutPadding().encodeToString(digest));
+    }
+
+    //TODO Change to utilize jackson and probably data object
+    public MultiValueMap<String, String> createAuthPayload(AuthData authData, String code) {
+        MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
+        map.add("client_id", spotifyAuthConfig.getClientId());
+        map.add("grant_type", "authorization_code");
+        map.add("code", code);
+        map.add("redirect_uri", spotifyAuthConfig.getRedirectUrl());
+        map.add("code_verifier", authData.getCode_verifier());
+
+        return map;
+    }
+
+    public HttpHeaders createHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        return headers;
     }
 }
