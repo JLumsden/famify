@@ -1,5 +1,6 @@
 package com.example.famify.service;
 
+import com.example.famify.config.SpotifyApiConfig;
 import com.example.famify.data.DeleteQueryDto;
 import com.example.famify.data.TrackDto;
 import com.example.famify.repository.SpotifyApiRepository;
@@ -22,6 +23,7 @@ import java.util.List;
 @AllArgsConstructor
 public class PlaylistService {
     private SpotifyApiRepository spotifyApiRepository;
+    private SpotifyApiConfig spotifyApiConfig;
 
     public String postPlaylistUrlDelegator(String accessToken, String playlistUrl) {
         String playlistId = parseForPlaylistId(playlistUrl);
@@ -38,26 +40,27 @@ public class PlaylistService {
                 parsePlaylistItemsJsonToDeleteQueryDto(response.getBody()), accessToken);
 
         response = deleteExplicitItems(entity, playlistId);
-        if (response.getStatusCodeValue() == 200) {
-            return "success";
-        } else {
+        if (response.getStatusCodeValue() != 200) {
             return "error";
         }
+
+        return "redirect";
     }
 
     public String parseForPlaylistId(String playlistUrl) {
         String[] tokens = playlistUrl.split("/");
-        int i;
-        for (i = 0; i < tokens.length; i++) {
+
+        for (int i = 0; i < tokens.length; i++) {
             if (tokens[i].equals("playlist")) {
                 String tag = tokens[i + 1];
-                int queryIndex = tag.indexOf("?");
 
                 //Returns substring until first "?"
                 //Ex: 6GMCSqe6k9qr6izzDoseQ1?si=351ba6ccb6374d12
                 //Returns: 6GMCSqe6k9qr6izzDoseQ1
                 //If queryIndex is -1, there is no "?"
                 //Can still be valid in this case
+                int queryIndex = tag.indexOf("?");
+
                 if (queryIndex > 0) {
                     return tag.substring(0, queryIndex);
                 } else if (queryIndex == -1){
@@ -70,13 +73,9 @@ public class PlaylistService {
 
     public ResponseEntity<String> getPlaylistItems(String playlistId, String accessToken) {
         //fields=items(track(id,explicit))
-        String url = "https://api.spotify.com/v1/playlists/" + playlistId + "/tracks";
+        String url = apiUrlBuilder(playlistId);
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(accessToken);
-
-        HttpEntity<Void> entity = new HttpEntity<>(headers);
+        HttpEntity<Void> entity = new HttpEntity<>(createHeaders(accessToken));
 
         return spotifyApiRepository.get(url, entity, String.class);
     }
@@ -119,9 +118,7 @@ public class PlaylistService {
     }
 
     public HttpEntity<String> deleteQueryDtoToJsonEntity(DeleteQueryDto deleteQueryDto, String accessToken) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(accessToken);
+
         ObjectMapper mapper = new ObjectMapper();
 
         String jsonString = null;
@@ -130,12 +127,24 @@ public class PlaylistService {
         } catch (JsonProcessingException e) {
             e.printStackTrace();
         }
-        return new HttpEntity<String>(jsonString, headers);
+        return new HttpEntity<String>(jsonString, createHeaders(accessToken));
     }
 
     public ResponseEntity<String> deleteExplicitItems(HttpEntity entity, String playlistId) {
-        String url = "https://api.spotify.com/v1/playlists/" + playlistId + "/tracks";
+        String url = apiUrlBuilder(playlistId);
 
         return spotifyApiRepository.delete(url, entity, String.class);
+    }
+
+    public HttpHeaders createHeaders(String accessToken) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(accessToken);
+
+        return headers;
+    }
+
+    public String apiUrlBuilder(String playlistId) {
+        return spotifyApiConfig.getApiUrl() + "/v1/playlists/" + playlistId + "/tracks";
     }
 }
