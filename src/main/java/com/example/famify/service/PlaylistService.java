@@ -44,7 +44,7 @@ public class PlaylistService {
             return "error";
         }
 
-        return "redirect";
+        return "success";
     }
 
     public String parseForPlaylistId(String playlistUrl) {
